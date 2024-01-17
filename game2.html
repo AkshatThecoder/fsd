@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+    <title>Mario-like Game</title>
+</head>
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 500 },
+                    debug: false,
+                },
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update,
+            },
+        };
+
+        const game = new Phaser.Game(config);
+        let player;
+        let cursors;
+
+        function preload() {
+            this.load.image('sky', 'path_to_sky_image.jpg');
+            this.load.image('ground', 'path_to_ground_image.png');
+            this.load.spritesheet('mario', 'path_to_mario_spritesheet.png', { frameWidth: 32, frameHeight: 48 });
+            this.load.image('block', 'path_to_block_image.png');
+            this.load.image('mushroom', 'path_to_mushroom_image.png');
+        }
+
+        function create() {
+            this.add.image(400, 300, 'sky');
+
+            // Platforms
+            const platforms = this.physics.add.staticGroup();
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+            platforms.create(600, 400, 'ground');
+            platforms.create(50, 250, 'ground');
+            platforms.create(750, 220, 'ground');
+
+            // Player
+            player = this.physics.add.sprite(100, 450, 'mario');
+            player.setBounce(0.2);
+            player.setCollideWorldBounds(true);
+
+            // Blocks
+            const blocks = this.physics.add.staticGroup();
+            blocks.create(400, 500, 'block').setImmovable(true);
+
+            // Mushrooms
+            const mushrooms = this.physics.add.group({
+                key: 'mushroom',
+                repeat: 1,
+                setXY: { x: 400, y: 450, stepX: 200 },
+                setScale: { x: 0.5, y: 0.5 },
+                bounceY: 0.1,
+                collideWorldBounds: true,
+            });
+
+            this.physics.add.collider(player, platforms);
+            this.physics.add.collider(player, blocks);
+            this.physics.add.collider(mushrooms, platforms);
+
+            this.physics.add.overlap(player, mushrooms, collectMushroom, null, this);
+
+            this.anims.create({
+                key: 'left',
+                frames: this.anims.generateFrameNumbers('mario', { start: 0, end: 3 }),
+                frameRate: 10,
+                repeat: -1,
+            });
+
+            this.anims.create({
+                key: 'turn',
+                frames: [{ key: 'mario', frame: 4 }],
+                frameRate: 20,
+            });
+
+            this.anims.create({
+                key: 'right',
+                frames: this.anims.generateFrameNumbers('mario', { start: 5, end: 8 }),
+                frameRate: 10,
+                repeat: -1,
+            });
+
+            cursors = this.input.keyboard.createCursorKeys();
+        }
+
+        function update() {
+            if (cursors.left.isDown) {
+                player.setVelocityX(-160);
+                player.anims.play('left', true);
+            } else if (cursors.right.isDown) {
+                player.setVelocityX(160);
+                player.anims.play('right', true);
+            } else {
+                player.setVelocityX(0);
+                player.anims.play('turn');
+            }
+
+            if (cursors.up.isDown && player.body.touching.down) {
+                player.setVelocityY(-330);
+            }
+        }
+
+        function collectMushroom(player, mushroom) {
+            mushroom.disableBody(true, true);
+            player.setTint(0x00ff00);
+        }
+    </script>
+</body>
+</html>

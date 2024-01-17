@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background-color: #ddd;
+        }
+    </style>
+    <title>Shooting Game Arena</title>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Image URLs (Replace with your own images or use placeholder images)
+        const playerImage = 'images/player.jpeg';
+        const targetImage = 'images/enemy.jpeg';
+
+        const player = {
+            x: 50,
+            y: canvas.height / 2 - 25,
+            width: 50,
+            height: 50,
+            image: new Image(),
+            speed: 10
+        };
+
+        const enemy = {
+            x: canvas.width - 100,
+            y: canvas.height / 2 - 25,
+            width: 50,
+            height: 50,
+            image: new Image(),
+            speed: 2
+        };
+
+        const bullets = [];
+        let score = 0;
+
+        // Set image sources
+        player.image.src = playerImage;
+        enemy.image.src = targetImage;
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "ArrowUp" && player.y > 0) {
+                player.y -= player.speed;
+            } else if (event.code === "ArrowDown" && player.y < canvas.height - player.height) {
+                player.y += player.speed;
+            } else if (event.code === "Space") {
+                bullets.push({ x: player.x + player.width, y: player.y + player.height / 2, width: 10, height: 2, color: "#e74c3c", speed: 8 });
+            }
+        });
+
+        function update() {
+            // Move enemy towards the player
+            if (enemy.x > player.x) {
+                enemy.x -= enemy.speed;
+            } else if (enemy.x < player.x) {
+                enemy.x += enemy.speed;
+            }
+
+            // Move bullets
+            for (let i = 0; i < bullets.length; i++) {
+                bullets[i].x += bullets[i].speed;
+
+                // Check for collision with the enemy
+                if (
+                    bullets[i].x < enemy.x + enemy.width &&
+                    bullets[i].x + bullets[i].width > enemy.x &&
+                    bullets[i].y < enemy.y + enemy.height &&
+                    bullets[i].y + bullets[i].height > enemy.y
+                ) {
+                    // Increase score and reset enemy position
+                    score++;
+                    enemy.x = canvas.width - 100;
+                    enemy.y = Math.random() * (canvas.height - enemy.height);
+                }
+
+                // Remove bullets that go off-screen
+                if (bullets[i].x > canvas.width) {
+                    bullets.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw battlefield arena
+            ctx.fillStyle = "#95a5a6";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw enemy
+            ctx.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height);
+
+            // Draw player
+            ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+
+            // Draw bullets
+            bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+
+            // Display score
+            ctx.fillStyle = "#000";
+            ctx.font = "20px Arial";
+            ctx.fillText("Score: " + score, 10, 30);
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
